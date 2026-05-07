@@ -8,5 +8,7 @@
 * Added `collect_git_contributors` API for extracting author name/email pairs
   from Git repositories
 * Added `fullcredit contributors` CLI command
-* Add nox sessions for linting, testing, coverage, and builds
-* Add pre-commit configuration with formatting, linting, and type-checking hooks
+* Added nox sessions for linting, testing, coverage, and builds
+* Added pre-commit configuration with formatting, linting, and type-checking hooks
+* Added GitHub Actions CI workflow for building distributions, running tests/coverage,
+  and publishing to PyPI/TestPyPI.
