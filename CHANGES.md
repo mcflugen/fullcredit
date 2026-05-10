@@ -16,3 +16,5 @@
   git contributor history.
 * Added a `fullcredit mailmap` command to generate a *git* mailmap file from a
   `fullcredit` authors file.
+* Added a `fullcredit authors` command to generate an author database from a list
+  of contributors.

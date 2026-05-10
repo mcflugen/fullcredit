@@ -28,6 +28,13 @@ def cmd_contributors(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_authors(args: argparse.Namespace) -> int:
+    identities = sorted(_load_identities(sys.stdin))
+    print(_dump_authors(build_author_list(identities)))
+
+    return 0
+
+
 def cmd_init(args: argparse.Namespace) -> int:
     identities = sorted(_merge_identities(args.repo))
     print(_dump_authors(build_author_list(identities)))
@@ -68,6 +75,9 @@ def build_parser() -> argparse.ArgumentParser:
         help="use null to separate names from emails",
     )
     contrib_parser.set_defaults(func=cmd_contributors)
+
+    authors_parser = subparsers.add_parser("authors")
+    authors_parser.set_defaults(func=cmd_authors)
 
     init_parser = subparsers.add_parser("init")
     init_parser.add_argument("repo", nargs="*", help="git repository")
@@ -119,3 +129,18 @@ def _merge_identities(repos: Iterable[str]) -> set[tuple[str, str]]:
     for repo in repos:
         identities |= collect_git_contributors(repo=repo)
     return identities
+
+
+def _load_identities(stream: Iterable[str]) -> list[tuple[str, str]]:
+    identities = set()
+    for line in stream:
+        identity = line.strip()
+        if not identity:
+            continue
+        try:
+            name, email = identity.split("\0", maxsplit=1)
+        except ValueError:
+            raise ValueError(f"{identity}: invalid identity")
+
+        identities.add((name.strip(), email.strip()))
+    return list(identities)
