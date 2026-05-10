@@ -6,6 +6,7 @@ from typing import BinaryIO
 
 from fullcredit.api import build_author_list
 from fullcredit.api import collect_git_contributors
+from fullcredit.api import merge_authors
 from fullcredit.authors import Author
 from fullcredit.authors import AuthorList
 from fullcredit.authors import _mailmap_entries_from_author
@@ -38,6 +39,18 @@ def cmd_authors(args: argparse.Namespace) -> int:
 def cmd_init(args: argparse.Namespace) -> int:
     identities = sorted(_merge_identities(args.repo))
     print(_dump_authors(build_author_list(identities)))
+
+    return 0
+
+
+def cmd_merge(args: argparse.Namespace) -> int:
+    lists = [_load_authors(sys.stdin.buffer)]
+    for path in args.authors:
+        with open(path, "rb") as stream:
+            lists.append(_load_authors(stream))
+    authors = merge_authors(lists)
+
+    print(_dump_authors(authors))
 
     return 0
 
@@ -82,6 +95,10 @@ def build_parser() -> argparse.ArgumentParser:
     init_parser = subparsers.add_parser("init")
     init_parser.add_argument("repo", nargs="*", help="git repository")
     init_parser.set_defaults(func=cmd_init)
+
+    merge_parser = subparsers.add_parser("merge")
+    merge_parser.add_argument("authors", nargs="*", help="merge author files")
+    merge_parser.set_defaults(func=cmd_merge)
 
     mailmap_parser = subparsers.add_parser("mailmap")
     mailmap_parser.set_defaults(func=cmd_mailmap)
