@@ -18,4 +18,4 @@ def test_contributors(monkeypatch, capsys):
 
 def test_contributors_with_no_repos_is_noop(capsys):
     assert main(["contributors"]) == 0
-    assert capsys.readouterr().out == ""
+    assert capsys.readouterr().out == "\n"

@@ -12,3 +12,5 @@
 * Added pre-commit configuration with formatting, linting, and type-checking hooks
 * Added GitHub Actions CI workflow for building distributions, running tests/coverage,
   and publishing to PyPI/TestPyPI.
+* Added a `fullcredit init` command to generate an initial author database from
+  git contributor history.
