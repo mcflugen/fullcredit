@@ -4,6 +4,7 @@ import copy
 import os
 import re
 from collections.abc import Iterable
+from itertools import product
 from typing import Any
 
 
@@ -251,3 +252,17 @@ def _toml_array(key: str, values: Iterable[str]) -> str:
     if not values:
         return f"{key} = []"
     return os.linesep.join([f"{key} = ["] + [f"  {v!r}," for v in values] + ["]"])
+
+
+def _mailmap_entries_from_author(author: Author) -> list[str]:
+    proper_name, proper_email = author.name, author.email
+
+    commit_combos = {
+        (n.lower(), e.lower()) for n, e in product(author.names, author.emails)
+    }
+    commit_combos.discard((proper_name.lower(), proper_email.lower()))
+
+    return [
+        f"{proper_name} <{proper_email}> {name} <{email}>"
+        for name, email in commit_combos
+    ]

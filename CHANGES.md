@@ -14,3 +14,5 @@
   and publishing to PyPI/TestPyPI.
 * Added a `fullcredit init` command to generate an initial author database from
   git contributor history.
+* Added a `fullcredit mailmap` command to generate a *git* mailmap file from a
+  `fullcredit` authors file.
