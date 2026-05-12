@@ -24,3 +24,7 @@
   name, GitHub username, or number of commits in a repository.
 * Renamed `AuthorList` to `AuthorCollection`, which now formally implements
   `collections.abc.Collection`.
+* Added a `fullcredit build` command to generate a formatted contributor list from
+  git history and an author database.
+* Added a `fullcredit build` subcommand to format an author database as a
+  credits list.
