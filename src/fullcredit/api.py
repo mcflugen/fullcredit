@@ -1,6 +1,17 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
+
 from fullcredit._git import GitLog
+from fullcredit.authors import AuthorList
+
+
+def build_author_list(identities: Iterable[tuple[str, str]]) -> AuthorList:
+    author_list = AuthorList()
+    for name, email in identities:
+        author_list.add(name, email)
+
+    return author_list
 
 
 def collect_git_contributors(
