@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+from collections.abc import Sequence
 
 from fullcredit._git import GitLog
 from fullcredit.authors import AuthorList
@@ -26,3 +27,10 @@ def collect_git_contributors(
             name_and_email.add((name.strip(), email.strip()))
 
     return name_and_email
+
+
+def merge_authors(author_lists: Sequence[AuthorList]) -> AuthorList:
+    merged = AuthorList()
+    for author_list in reversed(author_lists):
+        merged.update(author_list)
+    return merged

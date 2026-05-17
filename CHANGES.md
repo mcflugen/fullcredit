@@ -18,3 +18,5 @@
   `fullcredit` authors file.
 * Added a `fullcredit authors` command to generate an author database from a list
   of contributors.
+* Added a `fullcredit merge` command to combine multiple author databases into a
+  single merged author list.
