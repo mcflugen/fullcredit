@@ -1,10 +1,18 @@
 import argparse
 import sys
+import tomllib
 from collections.abc import Iterable
+from typing import BinaryIO
 
 from fullcredit.api import build_author_list
 from fullcredit.api import collect_git_contributors
 from fullcredit.authors import Author
+from fullcredit.authors import AuthorList
+from fullcredit.authors import _mailmap_entries_from_author
+
+
+class FullcreditError(Exception):
+    """Base exception for fullcredit."""
 
 
 def err(msg: str) -> None:
@@ -23,6 +31,22 @@ def cmd_contributors(args: argparse.Namespace) -> int:
 def cmd_init(args: argparse.Namespace) -> int:
     identities = sorted(_merge_identities(args.repo))
     print(_dump_authors(build_author_list(identities)))
+
+    return 0
+
+
+def cmd_mailmap(args: argparse.Namespace) -> int:
+    try:
+        authors = _load_authors(sys.stdin.buffer)
+    except FullcreditError as error:
+        err(str(error))
+        return 1
+
+    lines = []
+    for author in authors:
+        lines += _mailmap_entries_from_author(author)
+
+    print("\n".join(sorted(lines)))
 
     return 0
 
@@ -49,6 +73,9 @@ def build_parser() -> argparse.ArgumentParser:
     init_parser.add_argument("repo", nargs="*", help="git repository")
     init_parser.set_defaults(func=cmd_init)
 
+    mailmap_parser = subparsers.add_parser("mailmap")
+    mailmap_parser.set_defaults(func=cmd_mailmap)
+
     return parser
 
 
@@ -63,6 +90,20 @@ def _dump_authors(authors: Iterable[Author]) -> str:
     return "\n\n".join(
         author.to_toml() for author in sorted(authors, key=lambda a: (a.name, a.email))
     )
+
+
+def _load_authors(source: BinaryIO) -> AuthorList:
+    data = tomllib.load(source)
+
+    try:
+        records = data["tool"]["fullcredit"]["author"]
+    except KeyError as err:
+        raise FullcreditError(
+            "toml source must have [[tool.fullcredit.author]]"
+        ) from err
+    authors = [Author.from_dict(author) for author in records]
+
+    return AuthorList(authors=authors)
 
 
 def _dump_identities(identities: Iterable[tuple[str, str]], sep=None) -> str:
