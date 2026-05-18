@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import Counter
 from collections.abc import Iterable
 from collections.abc import Sequence
 
@@ -27,6 +28,11 @@ def collect_git_contributors(
             name_and_email.add((name.strip(), email.strip()))
 
     return name_and_email
+
+
+def collect_git_commit_counts(repo: str | None = None) -> Counter[str]:
+    git_log = GitLog("%an", repo=repo)
+    return Counter(git_log.run().splitlines())
 
 
 def merge_authors(author_lists: Sequence[AuthorList]) -> AuthorList:

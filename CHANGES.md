@@ -2,7 +2,7 @@
 
 ## 0.1.0
 
-### Feature
+### Features
 
 * Initial release
 * Added `collect_git_contributors` API for extracting author name/email pairs
@@ -20,3 +20,5 @@
   of contributors.
 * Added a `fullcredit merge` command to combine multiple author databases into a
   single merged author list.
+* Added a `fullcredit sort` command to sort an author database by name, last
+  name, GitHub username, or number of commits in a repository.
