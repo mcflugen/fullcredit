@@ -4,6 +4,8 @@ import tomllib
 from collections.abc import Iterable
 from typing import BinaryIO
 
+from fullcredit._sort import SORT_KEYS
+from fullcredit._sort import parse_key
 from fullcredit.api import build_author_list
 from fullcredit.api import collect_git_contributors
 from fullcredit.api import merge_authors
@@ -55,6 +57,20 @@ def cmd_merge(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_sort(args: argparse.Namespace) -> int:
+    try:
+        key = parse_key(args.key)
+    except ValueError as e:
+        err(str(e))
+        return 1
+
+    authors = _load_authors(sys.stdin.buffer)
+    sorted_authors = sorted(authors, key=key, reverse=args.reverse)
+    print(_format_authors(sorted_authors))
+
+    return 0
+
+
 def cmd_mailmap(args: argparse.Namespace) -> int:
     try:
         authors = _load_authors(sys.stdin.buffer)
@@ -100,6 +116,19 @@ def build_parser() -> argparse.ArgumentParser:
     merge_parser.add_argument("authors", nargs="*", help="merge author files")
     merge_parser.set_defaults(func=cmd_merge)
 
+    sort_parser = subparsers.add_parser("sort")
+    sort_parser.add_argument(
+        "key",
+        metavar="KEY",
+        help=f"sort key: {', '.join(SORT_KEYS[:-1])}, or commits:REPO",
+    )
+    sort_parser.add_argument(
+        "--reverse",
+        action="store_true",
+        help="reverse the sort order",
+    )
+    sort_parser.set_defaults(func=cmd_sort)
+
     mailmap_parser = subparsers.add_parser("mailmap")
     mailmap_parser.set_defaults(func=cmd_mailmap)
 
@@ -114,9 +143,11 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def _dump_authors(authors: Iterable[Author]) -> str:
-    return "\n\n".join(
-        author.to_toml() for author in sorted(authors, key=lambda a: (a.name, a.email))
-    )
+    return _format_authors(sorted(authors, key=lambda a: (a.name, a.email)))
+
+
+def _format_authors(authors: Iterable[Author]) -> str:
+    return "\n\n".join(author.to_toml() for author in authors)
 
 
 def _load_authors(source: BinaryIO) -> AuthorList:
