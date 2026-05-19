@@ -6,11 +6,11 @@ from typing import BinaryIO
 
 from fullcredit._sort import SORT_KEYS
 from fullcredit._sort import parse_key
-from fullcredit.api import build_author_list
+from fullcredit.api import build_author_collection
 from fullcredit.api import collect_git_contributors
 from fullcredit.api import merge_authors
 from fullcredit.authors import Author
-from fullcredit.authors import AuthorList
+from fullcredit.authors import AuthorCollection
 from fullcredit.authors import _mailmap_entries_from_author
 
 
@@ -33,23 +33,23 @@ def cmd_contributors(args: argparse.Namespace) -> int:
 
 def cmd_authors(args: argparse.Namespace) -> int:
     identities = sorted(_load_identities(sys.stdin))
-    print(_dump_authors(build_author_list(identities)))
+    print(_dump_authors(build_author_collection(identities)))
 
     return 0
 
 
 def cmd_init(args: argparse.Namespace) -> int:
     identities = sorted(_merge_identities(args.repo))
-    print(_dump_authors(build_author_list(identities)))
+    print(_dump_authors(build_author_collection(identities)))
 
     return 0
 
 
 def cmd_merge(args: argparse.Namespace) -> int:
-    lists = [_load_authors(sys.stdin.buffer)]
+    lists = [_load_author_collection(sys.stdin.buffer)]
     for path in args.authors:
         with open(path, "rb") as stream:
-            lists.append(_load_authors(stream))
+            lists.append(_load_author_collection(stream))
     authors = merge_authors(lists)
 
     print(_dump_authors(authors))
@@ -150,7 +150,7 @@ def _format_authors(authors: Iterable[Author]) -> str:
     return "\n\n".join(author.to_toml() for author in authors)
 
 
-def _load_authors(source: BinaryIO) -> AuthorList:
+def _load_authors(source: BinaryIO) -> list[Author]:
     data = tomllib.load(source)
 
     try:
@@ -159,9 +159,11 @@ def _load_authors(source: BinaryIO) -> AuthorList:
         raise FullcreditError(
             "toml source must have [[tool.fullcredit.author]]"
         ) from err
-    authors = [Author.from_dict(author) for author in records]
+    return [Author.from_dict(author) for author in records]
 
-    return AuthorList(authors=authors)
+
+def _load_author_collection(source: BinaryIO) -> AuthorCollection:
+    return AuthorCollection(authors=_load_authors(source))
 
 
 def _dump_identities(identities: Iterable[tuple[str, str]], sep=None) -> str:
