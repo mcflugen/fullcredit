@@ -22,3 +22,5 @@
   single merged author list.
 * Added a `fullcredit sort` command to sort an author database by name, last
   name, GitHub username, or number of commits in a repository.
+* Renamed `AuthorList` to `AuthorCollection`, which now formally implements
+  `collections.abc.Collection`.

@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import os
 import re
+from collections.abc import Collection
 from collections.abc import Iterable
 from itertools import product
 from typing import Any
@@ -147,7 +148,7 @@ class Author:
         )
 
 
-class AuthorList:
+class AuthorCollection(Collection):
     def __init__(self, authors: Iterable[Author] | None = None) -> None:
         self._name: dict[str, Author] = {}
         self._email: dict[str, Author] = {}
@@ -155,12 +156,16 @@ class AuthorList:
         for author in authors or ():
             self._index_author(author)
 
+    def __contains__(self, name_or_email: object) -> bool:
+        if not isinstance(name_or_email, str):
+            return False
+        return (name_or_email in self._name) or (name_or_email in self._email)
+
     def __iter__(self):
-        yield from set(self._name.values())
+        yield from dict.fromkeys(self._name.values())
 
     def __len__(self) -> int:
-        names = {author.name for author in self._name.values()}
-        return len(names)
+        return len(list(self))
 
     def _index_author(self, author: Author) -> Author:
         author = author.norm()
@@ -179,7 +184,7 @@ class AuthorList:
                 del self._email[email]
         return self._index_author(author)
 
-    def update(self, other: AuthorList) -> None:
+    def update(self, other: AuthorCollection) -> None:
         for author in other:
             self.add_author(author)
 

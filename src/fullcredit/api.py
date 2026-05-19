@@ -5,15 +5,15 @@ from collections.abc import Iterable
 from collections.abc import Sequence
 
 from fullcredit._git import GitLog
-from fullcredit.authors import AuthorList
+from fullcredit.authors import AuthorCollection
 
 
-def build_author_list(identities: Iterable[tuple[str, str]]) -> AuthorList:
-    author_list = AuthorList()
+def build_author_collection(identities: Iterable[tuple[str, str]]) -> AuthorCollection:
+    authors = AuthorCollection()
     for name, email in identities:
-        author_list.add(name, email)
+        authors.add(name, email)
 
-    return author_list
+    return authors
 
 
 def collect_git_contributors(
@@ -35,8 +35,8 @@ def collect_git_commit_counts(repo: str | None = None) -> Counter[str]:
     return Counter(git_log.run().splitlines())
 
 
-def merge_authors(author_lists: Sequence[AuthorList]) -> AuthorList:
-    merged = AuthorList()
-    for author_list in reversed(author_lists):
-        merged.update(author_list)
+def merge_authors(author_collections: Sequence[AuthorCollection]) -> AuthorCollection:
+    merged = AuthorCollection()
+    for author_collection in reversed(author_collections):
+        merged.update(author_collection)
     return merged
