@@ -6,6 +6,7 @@ import re
 from collections.abc import Collection
 from collections.abc import Iterable
 from itertools import product
+from re import Pattern
 from typing import Any
 
 
@@ -218,6 +219,35 @@ class AuthorCollection(Collection):
         if name_or_email in self._email:
             return self._email[name_or_email]
         raise KeyError(f"unknown author: {name_or_email!r}")
+
+
+def filter_authors(
+    authors: Iterable[Author],
+    include: str | None = None,
+    exclude: str | None = None,
+) -> list[Author]:
+    include_pattern = re.compile(include) if include else None
+    exclude_pattern = re.compile(exclude) if exclude else None
+
+    return [
+        author
+        for author in authors
+        if _matches_author(author, include=include_pattern, exclude=exclude_pattern)
+    ]
+
+
+def _matches_author(
+    author: Author,
+    include: Pattern[str] | None = None,
+    exclude: Pattern[str] | None = None,
+) -> bool:
+    if include and not any(include.search(name) for name in author.names):
+        return False
+
+    if exclude and any(exclude.search(name) for name in author.names):
+        return False
+
+    return True
 
 
 def score_name_for_display(name: str) -> tuple[int, int, str]:

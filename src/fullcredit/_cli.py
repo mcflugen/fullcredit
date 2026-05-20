@@ -12,6 +12,7 @@ from fullcredit.api import merge_authors
 from fullcredit.authors import Author
 from fullcredit.authors import AuthorCollection
 from fullcredit.authors import _mailmap_entries_from_author
+from fullcredit.authors import filter_authors
 
 
 class FullcreditError(Exception):
@@ -67,6 +68,14 @@ def cmd_sort(args: argparse.Namespace) -> int:
     authors = _load_authors(sys.stdin.buffer)
     sorted_authors = sorted(authors, key=key, reverse=args.reverse)
     print(_format_authors(sorted_authors))
+
+    return 0
+
+
+def cmd_build(args: argparse.Namespace) -> int:
+    authors = _load_authors(sys.stdin.buffer)
+    for author in filter_authors(authors, exclude=args.exclude):
+        print(args.format.format(name=author.name))
 
     return 0
 
@@ -128,6 +137,21 @@ def build_parser() -> argparse.ArgumentParser:
         help="reverse the sort order",
     )
     sort_parser.set_defaults(func=cmd_sort)
+
+    build_parser = subparsers.add_parser("build")
+    build_parser.add_argument(
+        "--exclude",
+        metavar="REGEX",
+        default=None,
+        help="exclude authors whose name matches this regex",
+    )
+    build_parser.add_argument(
+        "--format",
+        metavar="FORMAT",
+        default="* {name}",
+        help="format string for each author entry (default: '* {name}')",
+    )
+    build_parser.set_defaults(func=cmd_build)
 
     mailmap_parser = subparsers.add_parser("mailmap")
     mailmap_parser.set_defaults(func=cmd_mailmap)
