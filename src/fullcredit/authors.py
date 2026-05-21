@@ -166,7 +166,7 @@ class AuthorCollection(Collection):
         yield from dict.fromkeys(self._name.values())
 
     def __len__(self) -> int:
-        return len(list(self))
+        return len(dict.fromkeys(self._name.values()))
 
     def _index_author(self, author: Author) -> Author:
         author = author.norm()

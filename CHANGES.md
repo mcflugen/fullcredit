@@ -28,3 +28,7 @@
   git history and an author database.
 * Added a `fullcredit build` subcommand to format an author database as a
   credits list.
+
+### Fixes
+
+- Fixed infinite recursion when calling `len()` on an `AuthorCollection`.
