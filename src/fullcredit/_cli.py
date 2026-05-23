@@ -178,11 +178,9 @@ def _load_authors(source: BinaryIO) -> list[Author]:
     data = tomllib.load(source)
 
     try:
-        records = data["tool"]["fullcredit"]["author"]
+        records = data["author"]
     except KeyError as err:
-        raise FullcreditError(
-            "toml source must have [[tool.fullcredit.author]]"
-        ) from err
+        raise FullcreditError("toml source must have [[author]]") from err
     return [Author.from_dict(author) for author in records]
 
 

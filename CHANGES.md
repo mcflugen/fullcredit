@@ -29,6 +29,11 @@
 * Added a `fullcredit build` subcommand to format an author database as a
   credits list.
 
+### Changes
+
+* Changed the author database file to store records as top-level `[[author]]` TOML
+  tables.
+
 ### Fixes
 
 * Fixed infinite recursion when calling `len()` on an `AuthorCollection`.
