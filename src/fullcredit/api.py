@@ -37,6 +37,6 @@ def collect_git_commit_counts(repo: str | None = None) -> Counter[str]:
 
 def merge_authors(author_collections: Sequence[AuthorCollection]) -> AuthorCollection:
     merged = AuthorCollection()
-    for author_collection in reversed(author_collections):
+    for author_collection in author_collections:
         merged.update(author_collection)
     return merged

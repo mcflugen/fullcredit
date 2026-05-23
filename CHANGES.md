@@ -31,4 +31,7 @@
 
 ### Fixes
 
-- Fixed infinite recursion when calling `len()` on an `AuthorCollection`.
+* Fixed infinite recursion when calling `len()` on an `AuthorCollection`.
+* Fixed `fullcredit merge` to be commutative---input order no longer affects the
+  result. Merging author records with conflicting extra fields (e.g. `github`)
+  now raises an error instead of silently overwriting.

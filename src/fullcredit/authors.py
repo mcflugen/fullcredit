@@ -66,18 +66,27 @@ class Author:
 
         all_names: set[str] = set()
         all_emails: set[str] = set()
+        all_extras: dict[str, Any] = {}
         for author in authors:
             all_names.update(author.names)
             all_emails.update(author.emails)
+            try:
+                all_extras = _merge_extras(all_extras, dict(author.extras))
+            except ValueError as err:
+                err.add_note(f"author: {author.name!r}")
+                raise
 
         name = max(all_names, key=score_name_for_display)
         email = authors[0].email
 
-        return cls(
-            name=name,
-            email=email,
-            aliases=sorted(all_names - {name}),
-            alternate_emails=sorted(all_emails - {email}),
+        return cls.from_dict(
+            {
+                "name": name,
+                "email": email,
+                "aliases": sorted(all_names - {name}),
+                "alternate_emails": sorted(all_emails - {email}),
+                **all_extras,
+            }
         )
 
     @property
@@ -135,7 +144,11 @@ class Author:
 
         self._aliases.update(other._aliases)
         self._alternate_emails.update(other._alternate_emails)
-        self._extras.update(other._extras)
+        try:
+            self._extras = _merge_extras(self._extras, other._extras)
+        except ValueError as err:
+            err.add_note(f"author: {self.name}")
+            raise
 
         self._aliases.discard(self.name)
         self._alternate_emails.discard(self.email)
@@ -155,7 +168,7 @@ class AuthorCollection(Collection):
         self._email: dict[str, Author] = {}
 
         for author in authors or ():
-            self._index_author(author)
+            self.add_author(author)
 
     def __contains__(self, name_or_email: object) -> bool:
         if not isinstance(name_or_email, str):
@@ -301,3 +314,11 @@ def _mailmap_entries_from_author(author: Author) -> list[str]:
         f"{proper_name} <{proper_email}> {name} <{email}>"
         for name, email in commit_combos
     ]
+
+
+def _merge_extras(a: dict[str, Any], b: dict[str, Any]) -> dict[str, Any]:
+    conflicts = [k for k in (set(a) & set(b)) if a[k] != b[k]]
+    if conflicts:
+        msg = ", ".join(f"{k!r} ({a[k]!r} != {b[k]!r})" for k in conflicts)
+        raise ValueError(f"conflicting values: {msg}")
+    return a | b
