@@ -33,6 +33,8 @@
 
 * Changed the author database file to store records as top-level `[[author]]` TOML
   tables.
+* Changed `fullcredit contributors` to output NUL-separated name/email fields by
+  default and added `--sep` option to customize the field separator.
 
 ### Fixes
 

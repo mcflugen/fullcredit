@@ -24,7 +24,7 @@ def err(msg: str) -> None:
 
 
 def cmd_contributors(args: argparse.Namespace) -> int:
-    sep = "\0" if args.null else " "
+    sep = args.sep if args.sep is not None else "\0"
 
     identities = _merge_identities(args.repo)
     print(_dump_identities(identities, sep=sep))
@@ -108,9 +108,9 @@ def build_parser() -> argparse.ArgumentParser:
         help="git repository",
     )
     contrib_parser.add_argument(
-        *("-0", "--null"),
-        action="store_true",
-        help="use null to separate names from emails",
+        "--sep",
+        metavar="SEP",
+        help="use SEP to separate names from emails",
     )
     contrib_parser.set_defaults(func=cmd_contributors)
 
