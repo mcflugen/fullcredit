@@ -127,7 +127,7 @@ class Author:
 
     def to_toml(self) -> str:
         lines = [
-            "[[tool.fullcredit.author]]",
+            "[[author]]",
             _toml_kv("name", self.name),
             _toml_kv("email", self.email),
             _toml_array("aliases", self.aliases),
