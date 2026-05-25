@@ -1,4 +1,5 @@
 import argparse
+import os
 import sys
 import tomllib
 from collections.abc import Iterable
@@ -72,6 +73,30 @@ def cmd_sort(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_update(args: argparse.Namespace) -> int:
+    path = os.path.abspath(os.path.expanduser(args.file))
+    if args.repo is None:
+        repos = [os.path.dirname(path)]
+    else:
+        repos = [os.path.abspath(os.path.expanduser(repo)) for repo in args.repo]
+
+    identities = sorted(_merge_identities(repos))
+    incoming = build_author_collection(identities)
+
+    if os.path.isfile(path):
+        with open(path, "rb") as stream:
+            existing = _load_author_collection(stream)
+    else:
+        existing = AuthorCollection()
+
+    authors = merge_authors([incoming, existing])
+
+    with open(path, "w") as stream:
+        print(_dump_authors(authors), file=stream)
+
+    return 0
+
+
 def cmd_build(args: argparse.Namespace) -> int:
     authors = _load_authors(sys.stdin.buffer)
     for author in filter_authors(authors, exclude=args.exclude):
@@ -137,6 +162,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="reverse the sort order",
     )
     sort_parser.set_defaults(func=cmd_sort)
+
+    update_parser = subparsers.add_parser("update")
+    update_parser.add_argument("file", help="authors file to update")
+    update_parser.add_argument("--repo", action="append", help="git repository")
+    update_parser.set_defaults(func=cmd_update)
 
     build_parser = subparsers.add_parser("build")
     build_parser.add_argument(

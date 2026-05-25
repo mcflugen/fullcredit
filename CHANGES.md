@@ -28,6 +28,10 @@
   git history and an author database.
 * Added a `fullcredit build` subcommand to format an author database as a
   credits list.
+* Added a `fullcredit update` command to update an author database file
+  in-place from one or more git repositories. Existing records take
+  priority over incoming git history, so manually curated names and
+  fields are preserved across updates.
 
 ### Changes
 
@@ -42,3 +46,5 @@
 * Fixed `fullcredit merge` to be commutative---input order no longer affects the
   result. Merging author records with conflicting extra fields (e.g. `github`)
   now raises an error instead of silently overwriting.
+* Fixed `merge_authors` priority so that the last collection argument now has
+  the highest priority, matching the convention used by `merge`.

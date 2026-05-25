@@ -1,5 +1,8 @@
 import io
+import os
+import tomllib
 import types
+from unittest.mock import patch
 
 import pytest
 
@@ -178,6 +181,109 @@ class TestInit:
         assert out.index("Graham Chapman") < out.index("Terry Gilliam")
 
 
+class TestUpdate:
+    def test_creates_file_when_not_exists(self, tmp_path):
+        authors_file = os.path.join(str(tmp_path), "authors.toml")
+        with patch(
+            "fullcredit._cli.collect_git_contributors",
+            return_value={("Graham Chapman", "graham@example.com")},
+        ):
+            assert main(["update", authors_file, "--repo=foobar"]) == 0
+        assert os.path.isfile(authors_file)
+        with open(authors_file) as f:
+            assert "Graham Chapman" in f.read()
+
+    def test_updates_existing_file(self, tmp_path):
+        authors_file = os.path.join(str(tmp_path), "authors.toml")
+        with open(authors_file, "wb") as f:
+            f.write(GRAHAM_TOML)
+        with patch(
+            "fullcredit._cli.collect_git_contributors",
+            return_value={
+                ("Graham Chapman", "graham@example.com"),
+                ("John Cleese", "john@example.com"),
+            },
+        ):
+            assert main(["update", authors_file, "--repo=foobar"]) == 0
+        with open(authors_file) as f:
+            content = f.read()
+        assert "Graham Chapman" in content
+        assert "John Cleese" in content
+
+    def test_preserves_curated_name(self, tmp_path):
+        # Existing file has "G. Chapman" as the manually chosen primary name.
+        # Git history has "Graham Chapman" for the same email.
+        # After update, the curated name should remain primary.
+        curated = b"""\
+[[author]]
+name = "G. Chapman"
+email = "graham@example.com"
+aliases = [
+  "Graham Chapman",
+]
+alternate_emails = []
+"""
+        authors_file = os.path.join(str(tmp_path), "authors.toml")
+        with open(authors_file, "wb") as f:
+            f.write(curated)
+        with patch(
+            "fullcredit._cli.collect_git_contributors",
+            return_value={("Graham Chapman", "graham@example.com")},
+        ):
+            assert main(["update", authors_file, "--repo=foobar"]) == 0
+        with open(authors_file) as f:
+            data = tomllib.loads(f.read())
+        assert data["author"][0]["name"] == "G. Chapman"
+
+    def test_default_repo_is_file_directory(self, tmp_path):
+        captured = []
+
+        def mock_contributors(repo=None):
+            captured.append(repo)
+            return set()
+
+        authors_file = os.path.join(str(tmp_path), "authors.toml")
+        with patch(
+            "fullcredit._cli.collect_git_contributors", side_effect=mock_contributors
+        ):
+            assert main(["update", authors_file]) == 0
+        assert captured == [str(tmp_path)]
+
+    def test_custom_repo(self, tmp_path):
+        captured = []
+
+        def mock_contributors(repo=None):
+            captured.append(repo)
+            return set()
+
+        authors_file = os.path.join(str(tmp_path), "authors.toml")
+        repo_path = os.path.join(str(tmp_path), "myrepo")
+        with patch(
+            "fullcredit._cli.collect_git_contributors", side_effect=mock_contributors
+        ):
+            assert main(["update", authors_file, f"--repo={repo_path}"]) == 0
+        assert captured == [repo_path]
+
+    def test_multiple_repos(self, tmp_path):
+        captured = []
+
+        def mock_contributors(repo=None):
+            captured.append(repo)
+            return set()
+
+        authors_file = os.path.join(str(tmp_path), "authors.toml")
+        repo1 = os.path.join(str(tmp_path), "repo1")
+        repo2 = os.path.join(str(tmp_path), "repo2")
+        with patch(
+            "fullcredit._cli.collect_git_contributors", side_effect=mock_contributors
+        ):
+            assert (
+                main(["update", authors_file, f"--repo={repo1}", f"--repo={repo2}"])
+                == 0
+            )
+        assert set(captured) == {repo1, repo2}
+
+
 class TestMerge:
     def test_merges_stdin_with_file(self, capsys, tmp_path, binary_stdin):
         db = tmp_path / "authors.toml"
@@ -211,6 +317,43 @@ alternate_emails = []
         out = capsys.readouterr().out
         assert "Graham Chapman" in out
         assert "John Cleese" in out
+
+    def test_file_arg_takes_priority_over_stdin(self, capsys, tmp_path, binary_stdin):
+        # stdin has "G. Chapman", file has "Graham Chapman", same email.
+        # The file arg should win.
+        g_chapman_toml = b"""\
+[[author]]
+name = "G. Chapman"
+email = "graham@example.com"
+aliases = []
+alternate_emails = []
+"""
+        db = tmp_path / "authors.toml"
+        db.write_bytes(GRAHAM_TOML)
+        binary_stdin(g_chapman_toml)
+        assert main(["merge", str(db)]) == 0
+        data = tomllib.loads(capsys.readouterr().out)
+        assert data["author"][0]["name"] == "Graham Chapman"
+
+    def test_last_file_arg_takes_priority(self, capsys, tmp_path, binary_stdin):
+        # Two file args with the same email but different names.
+        # The last file arg should win.
+        g_chapman_toml = b"""\
+[[author]]
+name = "G. Chapman"
+email = "graham@example.com"
+aliases = []
+alternate_emails = []
+"""
+        first_db = tmp_path / "first.toml"
+        second_db = tmp_path / "second.toml"
+        first_db.write_bytes(g_chapman_toml)
+        second_db.write_bytes(GRAHAM_TOML)
+        binary_stdin(JOHN_TOML)
+        assert main(["merge", str(first_db), str(second_db)]) == 0
+        data = tomllib.loads(capsys.readouterr().out)
+        graham = next(a for a in data["author"] if "graham" in a["email"])
+        assert graham["name"] == "Graham Chapman"
 
 
 def _parse_names_from_toml_output(out: str) -> list[str]:
