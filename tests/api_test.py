@@ -1,4 +1,4 @@
-import pytest
+from unittest.mock import patch
 
 from fullcredit.api import build_author_collection
 from fullcredit.api import collect_git_commit_counts
@@ -7,67 +7,64 @@ from fullcredit.api import merge_authors
 from fullcredit.authors import AuthorCollection
 
 
-@pytest.fixture
-def mock_git_log(monkeypatch):
-    class MockGitLog:
-        stdout = ""
-
-        def __init__(self, *args, **kwargs):
-            pass
-
-        def run(self):
-            return self.stdout
-
-    monkeypatch.setattr("fullcredit.api.GitLog", MockGitLog)
-    return MockGitLog
-
-
 class TestCollectGitContributors:
-    def test_basic(self, mock_git_log):
-        mock_git_log.stdout = (
-            " Graham Chapman \0 graham@example.com \n"
-            "John Cleese\0john@example.com\n"
-            "Graham Chapman\0graham@example.com\n"
-        )
-        assert collect_git_contributors("foobar") == {
-            ("Graham Chapman", "graham@example.com"),
-            ("John Cleese", "john@example.com"),
-        }
+    def test_basic(self):
+        with patch("fullcredit.api.GitLog") as git_log:
+            git_log.return_value.run.return_value = (
+                " Graham Chapman \0 graham@example.com \n"
+                "John Cleese\0john@example.com\n"
+                "Graham Chapman\0graham@example.com\n"
+            )
 
-    def test_strips_whitespace(self, mock_git_log):
-        mock_git_log.stdout = " Graham Chapman \0 graham@example.com \n"
-        assert collect_git_contributors("foobar") == {
-            ("Graham Chapman", "graham@example.com")
-        }
+            assert collect_git_contributors("foobar") == {
+                ("Graham Chapman", "graham@example.com"),
+                ("John Cleese", "john@example.com"),
+            }
 
-    def test_deduplicates(self, mock_git_log):
-        mock_git_log.stdout = (
-            "Graham Chapman\0graham@example.com\n"
-            "Graham Chapman\0graham@example.com\n"
-        )
-        assert len(collect_git_contributors("foobar")) == 1
+    def test_strips_whitespace(self):
+        with patch("fullcredit.api.GitLog") as git_log:
+            git_log.return_value.run.return_value = (
+                " Graham Chapman \0 graham@example.com \n"
+            )
+            assert collect_git_contributors("foobar") == {
+                ("Graham Chapman", "graham@example.com")
+            }
 
-    def test_empty_log(self, mock_git_log):
-        mock_git_log.stdout = ""
-        assert collect_git_contributors("foobar") == set()
+    def test_deduplicates(self):
+        with patch("fullcredit.api.GitLog") as git_log:
+            git_log.return_value.run.return_value = (
+                "Graham Chapman\0graham@example.com\n"
+                "Graham Chapman\0graham@example.com\n"
+            )
+            assert len(collect_git_contributors("foobar")) == 1
 
-    def test_skips_blank_lines(self, mock_git_log):
-        mock_git_log.stdout = (
-            "Graham Chapman\0graham@example.com\n\nJohn Cleese\0john@example.com\n"
-        )
-        assert len(collect_git_contributors("foobar")) == 2
+    def test_empty_log(self):
+        with patch("fullcredit.api.GitLog") as git_log:
+            git_log.return_value.run.return_value = ""
+            assert collect_git_contributors("foobar") == set()
+
+    def test_skips_blank_lines(self):
+        with patch("fullcredit.api.GitLog") as git_log:
+            git_log.return_value.run.return_value = (
+                "Graham Chapman\0graham@example.com\n\nJohn Cleese\0john@example.com\n"
+            )
+            assert len(collect_git_contributors("foobar")) == 2
 
 
 class TestCollectGitCommitCounts:
-    def test_counts_commits_per_author(self, mock_git_log):
-        mock_git_log.stdout = "Graham Chapman\nJohn Cleese\nGraham Chapman\n"
-        counts = collect_git_commit_counts("foobar")
+    def test_counts_commits_per_author(self):
+        with patch("fullcredit.api.GitLog") as git_log:
+            git_log.return_value.run.return_value = (
+                "Graham Chapman\nJohn Cleese\nGraham Chapman\n"
+            )
+            counts = collect_git_commit_counts("foobar")
         assert counts["Graham Chapman"] == 2
         assert counts["John Cleese"] == 1
 
-    def test_empty_log(self, mock_git_log):
-        mock_git_log.stdout = ""
-        assert collect_git_commit_counts("foobar") == {}
+    def test_empty_log(self):
+        with patch("fullcredit.api.GitLog") as git_log:
+            git_log.return_value.run.return_value = ""
+            assert collect_git_commit_counts("foobar") == {}
 
 
 class TestBuildAuthorCollection:

@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import pytest
 
 from fullcredit._sort import key_commits
@@ -67,13 +69,13 @@ class TestParseKey:
         author = make_author("Graham Chapman", github="grahamchapman")
         assert key(author) == "grahamchapman"
 
-    def test_commits(self, monkeypatch):
-        monkeypatch.setattr(
+    def test_commits(self):
+        with patch(
             "fullcredit._sort.collect_git_commit_counts",
-            lambda repo: {"Graham Chapman": 3},
-        )
-        key = parse_key("commits:/some/repo")
-        assert key(make_author("Graham Chapman")) == -3
+            return_value={"Graham Chapman": 3},
+        ):
+            key = parse_key("commits:/some/repo")
+            assert key(make_author("Graham Chapman")) == -3
 
     def test_commits_without_repo_raises(self):
         with pytest.raises(ValueError, match="commits"):
