@@ -182,7 +182,6 @@ class AuthorCollection(Collection):
         return len(dict.fromkeys(self._name.values()))
 
     def _index_author(self, author: Author) -> Author:
-        author = author.norm()
         for name in author.names:
             self._name[name] = author
         for email in author.emails:

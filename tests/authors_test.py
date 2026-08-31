@@ -12,14 +12,15 @@ from fullcredit.authors import score_name_for_display
 
 class TestScoreNameForDisplay:
     @pytest.mark.parametrize(
-        "good, not_as_good", (
+        "good, not_as_good",
+        (
             ("Graham Chapman", "Grapham"),  # full name beats single name
             ("Graham Chapman", "G. Chapman"),  # full name beats abbreviated name
             ("Graham Chapman", "graham@example.com"),  # full name beats email
             ("Graham Chapman", "Graham2 Chapman"),  # full name beats name with number
             ("Terry-Thomas Gilliam", "graham@example.com"),
             ("Graham", "Eric"),  # longer name beats shorter name
-        )
+        ),
     )
     def test_name_score(self, good, not_as_good):
         assert score_name_for_display(good) > score_name_for_display(not_as_good)
